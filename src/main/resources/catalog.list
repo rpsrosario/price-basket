@@ -1,0 +1,22 @@
+#
+# The catalog.list file describes the list of all of the items available in our
+# imaginary store. It is read on a line per line basis adhering to the following
+# rules:
+#
+#   1. A catalog entry contains the name of the item followed by its price in
+#      GBP per unit (1.50 being £1 and 50p)
+#
+#   2. Whitespace is ignored except when between text segments (in which case
+#      any amount of whitespace is perceived as a single space character)
+#
+#   3. Entry names are case-insensitive (so Apples is the same as APPLES)
+#
+#   4. Duplicate entries are prohibited
+#
+#   5. Comments are ignored (lines starting with #).
+#
+
+Apples      1.00
+Bread       0.80
+Milk        1.30
+Soup        0.65
