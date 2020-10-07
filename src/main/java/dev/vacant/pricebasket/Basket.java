@@ -16,7 +16,7 @@ import static java.util.Objects.requireNonNull;
  * surrounding that information (e.g. the subtotal of the items in the basket).
  */
 public class Basket {
-    private final Map<String, Item> items;
+    private final Map<ItemId, Integer> items;
     private final Catalog catalog;
 
     /**
@@ -46,14 +46,10 @@ public class Basket {
      *                                  the given name.
      */
     public void addItem(String name) {
-        if (catalog.getPriceFor(name) == null)
-            throw new IllegalArgumentException(name + " doesn't exist in the catalog");
-
-        if (items.containsKey(name)) {
-            items.get(name).addAnother();
-        } else {
-            items.put(name, new Item(name));
-        }
+        ItemId itemId = new ItemId(name);
+        if (catalog.getPriceFor(itemId) == null)
+            throw new IllegalArgumentException(itemId + " doesn't exist in the catalog");
+        items.compute(itemId, (id, amount) -> (amount == null ? 0 : amount) + 1);
     }
 
     /**
@@ -65,29 +61,12 @@ public class Basket {
      * @return The subtotal of the basket, in GBP.
      */
     public BigDecimal getSubtotal() {
-        return items.values().stream()
-                .map(Item::price)
-                .reduce(BigDecimal::add)
-                .orElse(BigDecimal.ZERO)
-                .setScale(2, RoundingMode.HALF_EVEN);
-    }
-
-    private class Item {
-        private final String name;
-        private int amount;
-
-        private Item(String name) {
-            this.name = name;
-            this.amount = 1;
+        BigDecimal total = BigDecimal.ZERO;
+        for (Map.Entry<ItemId, Integer> basketEntry : items.entrySet()) {
+            BigDecimal price = catalog.getPriceFor(basketEntry.getKey());
+            BigDecimal amount = new BigDecimal(basketEntry.getValue());
+            total = total.add(price.multiply(amount));
         }
-
-        private void addAnother() {
-            amount++;
-        }
-
-        private BigDecimal price() {
-            BigDecimal price = catalog.getPriceFor(name);
-            return price.multiply(new BigDecimal(amount)).setScale(2, RoundingMode.UNNECESSARY);
-        }
+        return total.setScale(2, RoundingMode.UNNECESSARY);
     }
 }

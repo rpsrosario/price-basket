@@ -12,7 +12,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -20,7 +20,7 @@ import static org.mockito.Mockito.when;
 public class BasketTest {
 
     @ParameterizedTest(name = "Adding non-existent item to basket - {0}")
-    @ValueSource(strings = { "PEARS", "SUGAR CANE", "MAPLES", "PAPER" })
+    @ValueSource(strings = {"PEARS", "SUGAR CANE", "MAPLES", "PAPER"})
     void testNonExistentItem(String item) {
         final Catalog catalog = buildMockCatalog();
         final Basket basket = new Basket(catalog);
@@ -47,15 +47,15 @@ public class BasketTest {
     }
 
     private Catalog buildMockCatalog() {
-        Map<String, BigDecimal> data = new HashMap<>();
-        data.put("APPLES", new BigDecimal("1.00"));
-        data.put("BANANAS", new BigDecimal("0.80"));
+        Map<ItemId, BigDecimal> data = new HashMap<>();
+        data.put(new ItemId("apples"), new BigDecimal("1.00"));
+        data.put(new ItemId("bananas"), new BigDecimal("0.80"));
 
         Catalog catalog = mock(Catalog.class);
         when(catalog.getAllItems()).thenReturn(data.keySet());
-        when(catalog.getPriceFor(anyString())).thenAnswer(invocation -> {
-            String item = invocation.getArgument(0);
-            return data.get(item);
+        when(catalog.getPriceFor(any())).thenAnswer(invocation -> {
+            ItemId itemId = invocation.getArgument(0);
+            return data.get(itemId);
         });
         return catalog;
     }

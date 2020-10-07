@@ -4,11 +4,11 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static java.util.Objects.requireNonNull;
 
@@ -24,9 +24,10 @@ import static java.util.Objects.requireNonNull;
  * specify an unique item, where the item's name is case insensitive.
  */
 public class Catalog {
-    public static final String DATA_FILE = "catalog.list";
+    private static final Pattern LINE_FORMAT = Pattern.compile("(?<id>.*?)\\s+(?<price>\\S+)");
+    private static final String DATA_FILE = "catalog.list";
 
-    private final Map<String, BigDecimal> data;
+    private final Map<ItemId, BigDecimal> data;
 
     /**
      * Creates a new catalog using the specified data reader for retrieving the
@@ -53,11 +54,11 @@ public class Catalog {
     }
 
     /**
-     * Retrieves the names of all of the items in the catalog.
+     * Retrieves the IDs of all of the items in the catalog.
      *
-     * @return A set of the names of all the items in the catalog.
+     * @return A set of the IDs of all the items in the catalog.
      */
-    public Set<String> getAllItems() {
+    public Set<ItemId> getAllItems() {
         return data.keySet();
     }
 
@@ -65,12 +66,12 @@ public class Catalog {
      * Retrieves the price for the specified item, if it's available in the
      * catalog.
      *
-     * @param item The name of the item to price.
+     * @param itemId The ID of the item to price.
      * @return The price of the item, if it exists in the catalog, otherwise
      * {@code null}.
      */
-    public BigDecimal getPriceFor(String item) {
-        return data.get(item.trim().toUpperCase());
+    public BigDecimal getPriceFor(ItemId itemId) {
+        return data.get(itemId);
     }
 
     @Override
@@ -78,8 +79,8 @@ public class Catalog {
         return data.toString();
     }
 
-    private Map<String, BigDecimal> parseDataFile(LineNumberReader reader) throws IOException {
-        Map<String, BigDecimal> data = new HashMap<>();
+    private Map<ItemId, BigDecimal> parseDataFile(LineNumberReader reader) throws IOException {
+        Map<ItemId, BigDecimal> data = new HashMap<>();
 
         String line;
         while ((line = reader.readLine()) != null) {
@@ -87,32 +88,26 @@ public class Catalog {
             if (line.isEmpty() || line.charAt(0) == '#')
                 continue;
 
-            String[] fragments = line.split("\\s+");
-            if (fragments.length < 2) {
+            Matcher matcher = LINE_FORMAT.matcher(line);
+            if (!matcher.matches()) {
                 int lineNumber = reader.getLineNumber();
-                String message = "Entries must have both the item name and the price";
+                String message = "Entries must have both the item id and the price";
                 throw new CorruptDataFileException(lineNumber, message);
             }
 
             try {
                 // Ensures proper format and scale of the price
-                BigDecimal price = new BigDecimal(fragments[fragments.length - 1])
+                BigDecimal price = new BigDecimal(matcher.group("price"))
                         .setScale(2, RoundingMode.UNNECESSARY);
 
-                // Sanitize the item's name to an uppercase string with a single
-                // space as word delimiter
-                String item = Arrays.stream(fragments)
-                        .limit(fragments.length - 1)
-                        .map(String::toUpperCase)
-                        .collect(Collectors.joining(" "));
-
-                if (data.containsKey(item)) {
+                ItemId itemId = new ItemId(matcher.group("id"));
+                if (data.containsKey(itemId)) {
                     int lineNumber = reader.getLineNumber();
-                    String message = "Duplicate entry found for " + item;
+                    String message = "Duplicate entry found for " + itemId;
                     throw new CorruptDataFileException(lineNumber, message);
                 }
 
-                data.put(item, price);
+                data.put(itemId, price);
             } catch (NumberFormatException | ArithmeticException cause) {
                 int lineNumber = reader.getLineNumber();
                 String message = "Malformed price";

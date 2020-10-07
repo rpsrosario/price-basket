@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.StringReader;
 import java.math.BigDecimal;
-import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -46,7 +45,7 @@ class CatalogTest {
         assertThrows(CorruptDataFileException.class, () -> new Catalog(dataReader));
     }
 
-    @ParameterizedTest(name = "{index}. Sanitized Item Name")
+    @ParameterizedTest(name = "{index}. Item Name Parsing")
     @CsvSource({
             "'apples 1.00',         APPLES",
             "'Apples 1.00',         APPLES",
@@ -59,10 +58,10 @@ class CatalogTest {
             "'Sugar\tCane 2.50',    SUGAR CANE",
             "'Sugar\t \tCane 2.50', SUGAR CANE",
     })
-    void testItemSanitization(String dataContents, String sanitizedName) throws IOException {
+    void testItemNameParsing(String dataContents, String id) throws IOException {
         final DataReader dataReader = buildMockDataReader(dataContents);
         final Catalog catalog = new Catalog(dataReader);
-        assertEquals(Collections.singleton(sanitizedName), catalog.getAllItems());
+        assertEquals(new ItemId(id), catalog.getAllItems().iterator().next());
     }
 
     @ParameterizedTest(name = "Pricing Non-Existing {0}")
@@ -74,12 +73,12 @@ class CatalogTest {
             "Sugar",
             "Cane",
     })
-    void testPricingNonExistingItem(String item) throws IOException {
+    void testPricingNonExistingItem(String name) throws IOException {
         final DataReader dataReader = buildMockDataReader(
                 "Apples 1.00\nBananas 0.50\nSugar Cane 2.50"
         );
         final Catalog catalog = new Catalog(dataReader);
-        assertNull(catalog.getPriceFor(item));
+        assertNull(catalog.getPriceFor(new ItemId(name)));
     }
 
     @ParameterizedTest(name = "Pricing {0} yields {1}")
@@ -92,20 +91,20 @@ class CatalogTest {
             "Sugar CANE, 2.50",
             "SuGar Cane, 2.50",
     })
-    void testPricingExistingItem(String item, String price) throws IOException {
+    void testPricingExistingItem(String name, String price) throws IOException {
         final DataReader dataReader = buildMockDataReader(
                 "Apples 1.00\nBananas 0.50\nSugar Cane 2.50"
         );
         final Catalog catalog = new Catalog(dataReader);
-        assertEquals(new BigDecimal(price), catalog.getPriceFor(item));
+        assertEquals(new BigDecimal(price), catalog.getPriceFor(new ItemId(name)));
     }
 
     @ParameterizedTest(name = "{index}. Price Has Scale of 2")
-    @ValueSource(strings = { "1", "01", "1.1", "1.10", "1.01", "1.010", "1e20" })
+    @ValueSource(strings = {"1", "01", "1.1", "1.10", "1.01", "1.010", "1e20"})
     void testPriceScale(String price) throws IOException {
         final DataReader dataReader = buildMockDataReader("Apples " + price);
         final Catalog catalog = new Catalog(dataReader);
-        assertEquals(2, catalog.getPriceFor("Apples").scale());
+        assertEquals(2, catalog.getPriceFor(new ItemId("Apples")).scale());
     }
 
     private DataReader buildMockDataReader(String dataContents) throws IOException {
