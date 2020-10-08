@@ -42,7 +42,8 @@ public class DataReader {
      * This method will return a reader for the data file with the most
      * precedence that currently exists. This means that if a data file exists
      * in the backing file system then that one will be returned instead of the
-     * default one packaged with the application.
+     * default one packaged with the application. When a file doesn't exist in
+     * the backing file system it will be created with the default contents.
      *
      * @param filePath The relative path to the data file
      * @return The line number reader for the data file.
@@ -55,10 +56,19 @@ public class DataReader {
 
     private InputStream newInputStream(String filePath) throws IOException {
         Path path = fileSystem.getPath(filePath);
-        if (Files.exists(path))
-            return Files.newInputStream(path);
-        InputStream stream = getClass().getClassLoader().getResourceAsStream(filePath);
-        assert stream != null;
-        return stream;
+        if (!Files.exists(path)) {
+            try (InputStream in = getClass().getClassLoader().getResourceAsStream(filePath);
+                 OutputStream out = Files.newOutputStream(path)) {
+                // Only happens if the paths/resources are misconfigured
+                assert in != null;
+
+                byte[] buffer = new byte[32 * 1024];
+                int count;
+                while ((count = in.read(buffer)) >= 0) {
+                    out.write(buffer, 0, count);
+                }
+            }
+        }
+        return Files.newInputStream(path);
     }
 }

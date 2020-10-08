@@ -57,8 +57,13 @@ class DataReaderTest {
     }
 
     @Test
-    @DisplayName("Read included file when path doesn't exist")
+    @DisplayName("When path doesn't exist create it with default contents")
     void testNonExistingPath() throws IOException {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        when(provider.newOutputStream(path)).thenReturn(out);
+        when(provider.newInputStream(path))
+                .thenAnswer(invocation -> new ByteArrayInputStream(out.toByteArray()));
+
         doThrow(IOException.class).when(provider).readAttributes(eq(path), any(Class.class));
         doThrow(IOException.class).when(provider).readAttributes(eq(path), anyString());
         doThrow(IOException.class).when(provider).checkAccess(path);
@@ -69,5 +74,6 @@ class DataReaderTest {
         reader = dataReader.newLineNumberReader("testfiles/datafile");
 
         assertEquals("Data File Contents", reader.readLine());
+        assertEquals("Data File Contents", new String(out.toByteArray(), UTF_8).trim());
     }
 }
