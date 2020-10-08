@@ -1,0 +1,20 @@
+#
+# The offers.list file describes the list of all of the offers available in our
+# imaginary store. It is read on a line per line basis, ignoring comments (lines
+# starting with #). Parsers for the rules are dynamically searched for in the
+# classpath through Java's Service Discovery features. Refer to each parser's
+# documentation for information on the format
+#
+
+#
+# Discount Offer:
+#  The named item has the discount mentioned (either percentage or raw value).
+#
+Apples 10%
+
+#
+# Bundle Offer:
+#  The named item has the raw value discount mentioned for X items of another
+#  item. For N * X of the other items the total discount is N * the raw value.
+#
+Bread 0.40 per 2 Soup
