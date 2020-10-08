@@ -8,7 +8,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.StringReader;
-import java.math.BigDecimal;
 import java.util.List;
 
 import static java.util.Arrays.asList;
@@ -132,55 +131,4 @@ class OfferPackageTest {
         return dataReader;
     }
 
-    static class ApplicableOffer implements OfferRule {
-        @Override
-        public boolean isApplicable(Basket basket) {
-            return true;
-        }
-
-        @Override
-        public BigDecimal calculateDiscount(Basket basket) {
-            return BigDecimal.TEN;
-        }
-
-        @Override
-        public String getDescription() {
-            return "Always applicable";
-        }
-
-        public static class Parser implements OfferParser {
-            @Override
-            public ApplicableOffer parseRule(Catalog catalog, String rule) {
-                if (rule.equalsIgnoreCase("applicable"))
-                    return new ApplicableOffer();
-                return null;
-            }
-        }
-    }
-
-    static class NotApplicableOffer implements OfferRule {
-        @Override
-        public boolean isApplicable(Basket basket) {
-            return false;
-        }
-
-        @Override
-        public BigDecimal calculateDiscount(Basket basket) {
-            return BigDecimal.ZERO;
-        }
-
-        @Override
-        public String getDescription() {
-            return "Never applicable";
-        }
-
-        public static class Parser implements OfferParser {
-            @Override
-            public NotApplicableOffer parseRule(Catalog catalog, String rule) {
-                if (rule.equalsIgnoreCase("not applicable"))
-                    return new NotApplicableOffer();
-                return null;
-            }
-        }
-    }
 }
